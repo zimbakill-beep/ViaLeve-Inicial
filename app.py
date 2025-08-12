@@ -3,7 +3,7 @@ import streamlit as st
 from typing import Dict, Any, Tuple, List
 from datetime import date
 
-st.set_page_config(page_title="ViaLeve - Pré-elegibilidade", page_icon="💊", layout="centered")
+st.set_page_config(page_title="ViaLeve - Sua Jornada mais leve começa aqui", page_icon="💊", layout="centered")
 
 LOGO_SVG = """
 <svg width="720" height="180" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +78,7 @@ EXCIPIENTES_COMUNS = [
     "Polietilenoglicol (PEG)",
     "Metacresol / Fenol",
     "Fosfatos (fosfato dissódico etc.)",
-    "Látex (agulhas/rolhas)",
+    "Látex (agulhas/rolhas/camisinha)",
     "Carboximetilcelulose",
     "Trometamina (TRIS)",
 ]
@@ -183,7 +183,7 @@ if st.session_state.step == 0:
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia", list(range(1,32)), index=dia_default-1)
             mes = c2.selectbox("Mês", list(range(1,13)), index=mes_default-1)
-            anos = list(range(1900, hoje.year+1))
+            anos = list(range(1950, hoje.year+1))
             try:
                 idx = anos.index(ano_default)
             except ValueError:
@@ -226,7 +226,7 @@ elif st.session_state.step == 1:
         col1, col2 = st.columns(2)
         with col1:
             peso = st.number_input("Peso (kg) *", min_value=30, max_value=400, step=1, value=int(st.session_state.answers.get("peso", 90)), format="%d")
-            tem_comorbidades = st.radio("Possui comorbidades relevantes? (DM2, pressão alta, apneia, colesterol...)", options=["sim", "nao"], index=0 if st.session_state.answers.get("tem_comorbidades","sim")=="sim" else 1, horizontal=True)
+            tem_comorbidades = st.radio("Possui comorbidades relevantes? (Diabetes, pressão alta, apneia do sono, colesterol...)", options=["sim", "nao"], index=0 if st.session_state.answers.get("tem_comorbidades","sim")=="sim" else 1, horizontal=True)
         with col2:
             altura = st.number_input("Altura (m) *", min_value=1.30, max_value=2.20, step=0.01, value=float(st.session_state.answers.get("altura", 1.70)), help="Ex.: 1.70")
             comorbidades = st.text_area("Se sim, quais comorbidades?", value=st.session_state.answers.get("comorbidades", ""))
@@ -239,7 +239,7 @@ elif st.session_state.step == 1:
 
 # -------- Step 2 — Condições --------
 elif st.session_state.step == 2:
-    st.subheader("3) Algumas condições importantes ⚠️")
+    st.subheader("3) Algumas perguntas importantes ⚠️")
     with st.form("step2"):
         col1, col2 = st.columns(2)
         with col1:
@@ -376,7 +376,7 @@ elif st.session_state.step == 5:
         with col2:
             b_reset = st.form_submit_button("Reiniciar fluxo 🔄", use_container_width=True)
         with col3:
-            st.download_button("Baixar minhas respostas (JSON)", data=str(st.session_state.answers), file_name="vialeve_respostas.json", mime="application/json", disabled=not st.session_state.consent_ok)
+            st.download_button("Baixar minhas respostas ", data=str(st.session_state.answers), file_name="vialeve_respostas.json", mime="application/json", disabled=not st.session_state.consent_ok)
 
         if b_voltar:
             prev_step()  # força rerun
@@ -384,4 +384,4 @@ elif st.session_state.step == 5:
             reset_flow()  # força rerun
 
 st.markdown("---")
-st.caption("ViaLeve • Protótipo v0.8 — PT-BR • Streamlit (Python)")
+st.caption("ViaLeve • Protótipo v0.8 — PT-BR • Streamlit (Python)*Desenvolvedor Gil Abdallah Tosta ")
