@@ -73,7 +73,7 @@ EXCIPIENTES_COMUNS = [
     "Polietilenoglicol (PEG)",
     "Metacresol / Fenol",
     "Fosfatos (fosfato dissódico etc.)",
-    "Látex (agulhas/rolhas)",
+    "Látex (agulhas/rolhas/camisinha)",
     "Carboximetilcelulose",
     "Trometamina (TRIS)",
 ]
@@ -253,7 +253,7 @@ elif st.session_state.step == 2:
             gi_grave = st.radio("Doença gastrointestinal grave ativa?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gi_grave","nao")=="nao" else 1)
             gastroparesia = st.radio("Diagnóstico de gastroparesia (esvaziamento gástrico lento)?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gastroparesia","nao")=="nao" else 1)
         with col2:
-            pancreatite_previa = st.radio("Já teve pancreatite?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("pancreatite_previa","nao")=="nao" else 1)
+            pancreatite_previa = st.radio("Já teve pancreatite ou problemas no pancrêas?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("pancreatite_previa","nao")=="nao" else 1)
             historico_mtc_men2 = st.radio("História pessoal/familiar de MTC/MEN2?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("historico_mtc_men2","nao")=="nao" else 1)
             colecistite_12m = st.radio("Cólica de vesícula/colecistite nos últimos 12 meses?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("colecistite_12m","nao")=="nao" else 1)
             outras_contra = st.text_area("Outras condições clínicas relevantes?")
