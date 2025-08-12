@@ -250,7 +250,7 @@ elif st.session_state.step == 2:
             gastroparesia = st.radio("Diagnóstico de gastroparesia (esvaziamento gástrico lento)?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gastroparesia","nao")=="nao" else 1)
         with col2:
             pancreatite_previa = st.radio("Já teve pancreatite?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("pancreatite_previa","nao")=="nao" else 1)
-            historico_mtc_men2 = st.radio("História pessoal/familiar de MTC/MEN2?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("historico_mtc_men2","nao")=="nao" else 1)
+            historico_mtc_men2 = st.radio("História pessoal/familiar de cancer na tireoide?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("historico_mtc_men2","nao")=="nao" else 1)
             colecistite_12m = st.radio("Cólica de vesícula/colecistite nos últimos 12 meses?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("colecistite_12m","nao")=="nao" else 1)
             outras_contra = st.text_area("Outras condições clínicas relevantes?")
 
@@ -270,7 +270,7 @@ elif st.session_state.step == 3:
     with st.form("step3"):
         col1, col2 = st.columns(2)
         with col1:
-            insuf_renal = st.selectbox("Como estão seus rins?", ["normal", "leve", "moderada", "grave"], index=["normal","leve","moderada","grave"].index(st.session_state.answers.get("insuf_renal","normal")) if st.session_state.answers.get("insuf_renal") else 0)
+            insuf_renal = st.selectbox("Como estão seus rins? Algum problema?", ["Está normal", "leve", "moderada", "grave"], index=["Está normal","leve","moderada","grave"].index(st.session_state.answers.get("insuf_renal","Está normal")) if st.session_state.answers.get("insuf_renal") else 0)
             insuf_hepatica = st.selectbox("E o fígado?", ["normal", "leve", "moderada", "grave"], index=["normal","leve","moderada","grave"].index(st.session_state.answers.get("insuf_hepatica","normal")) if st.session_state.answers.get("insuf_hepatica") else 0)
             transtorno_alimentar = st.radio("Tem transtorno alimentar ativo (anorexia/bulimia/compulsão)?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("transtorno_alimentar","nao")=="nao" else 1)
             uso_corticoide = st.radio("Usa corticoide todos os dias há mais de 3 meses?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("uso_corticoide","nao")=="nao" else 1)
@@ -334,7 +334,7 @@ elif st.session_state.step == 5:
         else:
             st.button("Agendar minha consulta (configure VIALEVE_SCHED_URL)", disabled=True, use_container_width=True)
     else:
-        st.warning("ℹ️ **Obrigado por responder!** Neste momento, precisamos de uma **avaliação médica** antes de seguir com medicação para emagrecimento.")
+        st.warning("ℹ️ **Obrigado por responder!** Neste momento, precisamos de uma **avaliação médica** antes de seguir com a prescrição médica.")
         if reasons:
             with st.expander("Entenda o porquê", expanded=False):
                 for r in reasons:
