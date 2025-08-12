@@ -183,7 +183,7 @@ if st.session_state.step == 0:
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia", list(range(1,32)), index=dia_default-1)
             mes = c2.selectbox("Mês", list(range(1,13)), index=mes_default-1)
-            anos = list(range(1950, hoje.year+1))
+            anos = list(range(1940, hoje.year+1))
             try:
                 idx = anos.index(ano_default)
             except ValueError:
@@ -302,7 +302,7 @@ elif st.session_state.step == 4:
             efeitos = st.text_area("Teve algum efeito colateral? Conte pra gente.")
         with col2:
             objetivo = st.selectbox("Qual seu objetivo principal?", options=["Perda de peso","Controle de comorbidades","Manutenção"], index=["Perda de peso","Controle de comorbidades","Manutenção"].index(st.session_state.answers.get("objetivo","Perda de peso")) if st.session_state.answers.get("objetivo") else 0)
-            gestao_expectativas = st.slider("Quão pronto(a) está para mudanças no dia a dia (0-10)?", 0, 10, value=st.session_state.answers.get("pronto_mudar", 7))
+            gestao_expectativas = st.slider("Quão pronto(a) está para mudanças no dia a dia (0-10)?", 0, 10, value=st.session_state.answers.get("pronto_mudar", 6))
 
         st.session_state.answers.update({"usou_antes": usou_antes, "quais": quais, "efeitos": efeitos, "objetivo": objetivo, "pronto_mudar": gestao_expectativas})
 
