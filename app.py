@@ -3,7 +3,7 @@ import streamlit as st
 from typing import Dict, Any, Tuple, List
 from datetime import date
 
-st.set_page_config(page_title="ViaLeve - Sua Vida mais leve começa aqui", page_icon="💊", layout="centered")
+st.set_page_config(page_title="ViaLeve - Sua Vida Mais leve Começa Aqui", page_icon="💊", layout="centered")
 
 LOGO_SVG = """
 <svg width="720" height="180" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg">
@@ -21,7 +21,7 @@ LOGO_SVG = """
   <g transform="translate(160,40)">
     <text x="0" y="55" font-size="64" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="700" fill="#0F172A">Via</text>
     <text x="155" y="55" font-size="64" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="600" fill="#0EA5A4">Leve</text>
-    <text x="0" y="105" font-size="20" font-family="Inter, Arial, Helvetica, sans-serif" fill="#475569">sua jornada mais leve começa aqui</text>
+    <text x="0" y="105" font-size="20" font-family="Inter, Arial, Helvetica, sans-serif" fill="#475569">Sua Vida Mais Leve Começa Aqui</text>
   </g>
 </svg>
 """
