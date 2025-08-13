@@ -162,7 +162,7 @@ st.progress((st.session_state.step + 1) / total_steps)
 
 # -------- Step 0 — Identificação (Dia/Mês/Ano sem calendário) --------
 if st.session_state.step == 0:
-    st.subheader("1) Quem é você? 🙂")
+    st.subheader("1) Vamos começar ? 🙂")
     with st.form("step0"):
         col1, col2 = st.columns(2)
         with col1:
