@@ -155,7 +155,7 @@ st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
 st.caption("Uma triagem rápida e acolhedora para entender se o tratamento farmacológico pode ser para você.")
 
 with st.expander("Como funciona (rapidinho)", expanded=False):
-    st.write("- Em 5 min você responde perguntas simples.\n- Cada pessoa tem uma história única, queremos conhecer você.\n- Depois das respostas nosso time **médico** vai conferir tudo.\n- Por ultimo se tudo certo enviaremos sua prescrição.")
+    st.write("- Em 5 min você responde perguntas simples.\n- Cada pessoa tem uma história única, queremos conhecer a sua.\n- Depois das respostas nosso time **médico** vai conferir tudo.\n- Por último, se tudo certo, enviaremos sua prescrição.")
 
 total_steps = 6
 st.progress((st.session_state.step + 1) / total_steps)
