@@ -20,7 +20,7 @@ LOGO_SVG = """
   </g>
   <g transform="translate(160,40)">
     <text x="0" y="55" font-size="64" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="700" fill="#0EA5A4">Via</text>
-    <text x="105" y="55" font-size="64" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="600" fill="#0EA5A4">Leve</text>
+    <text x="90" y="55" font-size="64" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="600" fill="#0EA5A4">Leve</text>
     <text x="0" y="105" font-size="20" font-family="Inter, Arial, Helvetica, sans-serif" fill="#475569">Sua Vida Mais Leve Começa Aqui</text>
   </g>
 </svg>
