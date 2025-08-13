@@ -178,7 +178,7 @@ if st.session_state.step == 0:
                 except Exception:
                     dia_default, mes_default, ano_default = 1, 1, 1990
             else:
-                dia_default, mes_default, ano_default = 1, 1, 1940
+                dia_default, mes_default, ano_default = 1, 1, 1990
 
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia", list(range(1,32)), index=dia_default-1)
