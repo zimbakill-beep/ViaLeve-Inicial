@@ -152,7 +152,7 @@ def evaluate_rules(a: Dict[str, Any]):
 # UI
 init_state()
 st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
-st.caption("Uma triagem rápida e acolhedora para entender se o tratamento farmacológico pode ser adequado para você.")
+st.caption("Uma triagem rápida e acolhedora para entender se o tratamento farmacológico pode ser para você.")
 
 with st.expander("Como funciona (rapidinho)", expanded=False):
     st.write("- Em 5 min você responde perguntas simples.\n- Ao final, dizemos se **parece** uma boa ideia seguir para consulta.\n- Depois um **médico** confere tudo antes de qualquer prescrição.")
@@ -178,7 +178,7 @@ if st.session_state.step == 0:
                 except Exception:
                     dia_default, mes_default, ano_default = 1, 1, 1990
             else:
-                dia_default, mes_default, ano_default = 1, 1, 1990
+                dia_default, mes_default, ano_default = 1, 1, 1940
 
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia", list(range(1,32)), index=dia_default-1)
