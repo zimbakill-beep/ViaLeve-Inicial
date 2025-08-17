@@ -180,20 +180,20 @@ if st.session_state.step == 0:
                     d = date.fromisoformat(default_iso)
                     dia_default, mes_default, ano_default = d.day, d.month, d.year
                 except Exception:
-                    dia_default, mes_default, ano_default = 1, 1, 1990
+                    dia_default, mes_default, ano_default = 1, 1, 1945
             else:
-                dia_default, mes_default, ano_default = 1, 1, 1990
+                dia_default, mes_default, ano_default = 1, 1, 1945
 
             st.markdown("<div class='muted'>Preencha sua <b>data de nascimento</b> nos campos abaixo (Dia / Mês / Ano).</div>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1,1,2])
-            dia = c1.selectbox("Dia (nascimento)", list(range(1,32)), index=dia_default-1, placeholder="Selecione o dia")
-            mes = c2.selectbox("Mês (nascimento)", list(range(1,13)), index=mes_default-1, placeholder="Selecione o mês")
+            dia = c1.selectbox("Dia ", list(range(1,32)), index=dia_default-1, placeholder="Selecione o dia")
+            mes = c2.selectbox("Mês ", list(range(1,13)), index=mes_default-1, placeholder="Selecione o mês")
             anos = list(range(1900, hoje.year+1))
             try:
                 idx = anos.index(ano_default)
             except ValueError:
                 idx = len(anos)//2
-            ano = c3.selectbox("Ano (nascimento)", anos, index=idx, placeholder="Selecione o ano")
+            ano = c3.selectbox("Ano ", anos, index=idx, placeholder="Selecione o ano")
 
             identidade = st.selectbox("Como você se identifica? (opcional)", ["Feminino","Masculino","Prefiro não informar"], index=(["Feminino","Masculino","Prefiro não informar"].index(st.session_state.answers.get("identidade","Feminino")) if st.session_state.answers.get("identidade") else 0), placeholder="Selecione uma opção")
 
