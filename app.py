@@ -138,14 +138,14 @@ def crumbs():
     ) + "</div>", unsafe_allow_html=True)
 
 def norm_orgao(v: str) -> str:
-    mapa = {"Está normal":"normal","normal":"normal","leve":"leve","moderada":"moderada","grave":"grave","Não sei informar":"desconhecido","não sei informar":"desconhecido"}
+    mapa = {"Está normal":"normal","Normal":"normal","normal":"normal","Leve":"leve","leve":"leve","Moderada":"moderada","moderada":"moderada","Grave":"grave","grave":"grave","Não sei informar":"desconhecido","não sei informar":"desconhecido"}
     return mapa.get(v, "desconhecido")
 
 # ---------------- App ----------------
 init_state()
 st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
 
-# (4) Seção "Como funciona" fixa (sempre visível, sem expander)
+# Seção "Como funciona" fixa (sempre visível, sem expander)
 st.markdown(
     """
 <div class="card">
@@ -207,7 +207,6 @@ if st.session_state.step == 0:
 
         st.session_state.answers.update({"nome": nome, "email": email, "identidade": identidade, "data_nascimento": (str(data_nascimento) if not erro else "")})
 
-        # Botões (3) Voltar em todas as etapas | deixar 'Continuar' primeiro no código para o Enter
         colA, colB = st.columns(2)
         with colB:
             b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
@@ -262,7 +261,6 @@ elif st.session_state.step == 2:
             colecistite_12m = st.selectbox("Cólica de vesícula/colecistite nos últimos 12 meses?", ["Não","Sim"], index=0 if st.session_state.answers.get("colecistite_12m","nao")=="nao" else 1, placeholder="Selecione uma opção")
             outras_contra = st.text_area("Outras condições clínicas relevantes? (opcional)", value=st.session_state.answers.get("outras_contra",""))
 
-        # normaliza para sim/nao
         st.session_state.answers.update({
             "gravidez": "sim" if gravidez=="Sim" else "nao",
             "amamentando": "sim" if amamentando=="Sim" else "nao",
@@ -297,7 +295,6 @@ elif st.session_state.step == 3:
             antipsicoticos = st.selectbox("Usa medicamentos antipsicóticos atualmente?", ["Não","Sim"], index=0 if st.session_state.answers.get("antipsicoticos","nao")=="nao" else 1, placeholder="Selecione uma opção")
         with col2:
             alergias_componentes = st.multiselect("É alérgico(a) a algum destes componentes comuns?", options=EXCIPIENTES_COMUNS, default=st.session_state.answers.get("alergias_componentes", []), placeholder="Selecione os componentes (pode marcar mais de um)")
-            # Exclusão mútua: se "Não tenho..." + outros → mantém só "Não tenho..."
             if "Não tenho alergia a esses componentes" in alergias_componentes and len(alergias_componentes) > 1:
                 alergias_componentes = ["Não tenho alergia a esses componentes"]
             outros_componentes = st.text_input("Alguma outra alergia importante? (opcional)", value=st.session_state.answers.get("outros_componentes",""))
@@ -346,7 +343,6 @@ elif st.session_state.step == 4:
 
         if b_back: prev_step()
         if b_cont:
-            # calcula idade internamente
             try:
                 dob = date.fromisoformat(st.session_state.answers.get("data_nascimento"))
                 st.session_state.answers["idade"] = calc_idade(dob)
@@ -411,7 +407,6 @@ elif st.session_state.step == 5:
         with colB:
             st.download_button("Baixar minhas respostas (JSON)", data=str(st.session_state.answers), file_name="vialeve_respostas.json", mime="application/json", disabled=not st.session_state.consent_ok, use_container_width=True)
         with colA:
-            # também tem voltar aqui
             b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
         if b_back:
