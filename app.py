@@ -143,7 +143,7 @@ st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
 st.markdown(
     """
 <div class="card">
-  <b>Como funciona</b>
+  <b>   Como funciona</b>
   <ul style="margin: .5rem 0 0 .9rem;">
     <li>Em poucos minutos você responde perguntas simples.</li>
     <li>Cada pessoa tem uma história única — queremos conhecer a sua.</li>
