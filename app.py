@@ -30,7 +30,7 @@ st.markdown(
     """
     <style>
       :root { --brand: #0EA5A4; --brandSoft: #94E7E3; --ink: #0F172A; }
-      .logo-wrap { display:flex; align-items:center; gap:14px; margin: 0 0 12px 0; }
+      .logo-wrap { display:flex; align-items:center; gap:12px; margin: 0 0 12px 0; }
       .logo-wrap svg { max-width: 100%; height: auto; }
       .card {
         background: linear-gradient(135deg, #0EA5A4 0%, #26C0BE 60%, #94E7E3 100%);
