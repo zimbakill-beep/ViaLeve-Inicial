@@ -143,7 +143,7 @@ st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
 st.markdown(
     """
 <div class="card">
-  <b>   Como funciona</b>
+  <b>Como funciona</b>
   <ul style="margin: .5rem 0 0 .9rem;">
     <li>Em poucos minutos você responde perguntas simples.</li>
     <li>Cada pessoa tem uma história única — queremos conhecer a sua.</li>
@@ -181,7 +181,7 @@ if st.session_state.step == 0:
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia ", list(range(1,32)), index=dia_default-1, placeholder="Selecione o dia")
             mes = c2.selectbox("Mês ", list(range(1,13)), index=mes_default-1, placeholder="Selecione o mês")
-            anos = list(range(1900, hoje.year+1))
+            anos = list(range(1945, hoje.year+1))
             try:
                 idx = anos.index(ano_default)
             except ValueError:
