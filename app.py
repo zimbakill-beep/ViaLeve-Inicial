@@ -1,10 +1,11 @@
 import os
 import streamlit as st
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, List
 from datetime import date
 
-st.set_page_config(page_title="ViaLeve - Sua Vida Mais leve Começa Aqui", page_icon="💊", layout="centered")
+st.set_page_config(page_title="ViaLeve - Sua Vida Mais Leve Começa Aqui", page_icon="💊", layout="centered")
 
+# ---------------- Marca / estilo ----------------
 LOGO_SVG = """
 <svg width="720" height="180" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -30,24 +31,22 @@ st.markdown(
     """
     <style>
       :root { --brand: #0EA5A4; --brandSoft: #94E7E3; --ink: #0F172A; }
-      .small-muted { color:#6b7280; font-size:0.9rem; }
-      .badge { display:inline-block; padding:0.25rem 0.6rem; border-radius:999px; background:var(--brandSoft); }
-      .card { padding:1rem; border-radius:1rem; background:#F7FAF9; border:1px solid #e5e7eb; }
       .logo-wrap { display:flex; align-items:center; gap:14px; margin: 0 0 12px 0; }
       .logo-wrap svg { max-width: 100%; height: auto; }
+      .card { padding:1rem; border-radius:1rem; background:#F7FAF9; border:1px solid #e5e7eb; }
+      .crumbs { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0 16px 0;}
+      .crumb { padding:6px 10px; border-radius:999px; border:1px solid #e2e8f0; background:#fff; color:#0f172a; font-size:0.85rem;}
+      .crumb.active { background: var(--brandSoft); border-color: #c7f3ef; }
+      .muted { color:#6b7280; font-size:0.9rem; }
+      .actions { margin-top: .5rem; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# ---------------- Estado / navegação ----------------
 def init_state():
-    defaults = {
-        "step": 0,
-        "answers": {},
-        "eligibility": None,
-        "exclusion_reasons": [],
-        "consent_ok": False,
-    }
+    defaults = {"step": 0, "answers": {}, "eligibility": None, "exclusion_reasons": [], "consent_ok": False}
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -69,11 +68,11 @@ def reset_flow():
     st.experimental_rerun()
 
 def calc_idade(d: date | None) -> int | None:
-    if not d:
-        return None
+    if not d: return None
     today = date.today()
     return today.year - d.year - ((today.month, today.day) < (d.month, d.day))
 
+# ---------------- Regras clínicas ----------------
 EXCIPIENTES_COMUNS = [
     "Polietilenoglicol (PEG)",
     "Metacresol / Fenol",
@@ -81,13 +80,14 @@ EXCIPIENTES_COMUNS = [
     "Látex (agulhas/rolhas/camisinha)",
     "Carboximetilcelulose",
     "Trometamina (TRIS)",
+    "Não tenho alergia a esses componentes",  # excludente
 ]
 
 def evaluate_rules(a: Dict[str, Any]):
     exclusion = []
-    def g(key, default=None):
-        return a.get(key, default)
+    def g(key, default=None): return a.get(key, default)
 
+    # idade (somente para regra, não exibimos)
     if g("data_nascimento"):
         try:
             dob = g("data_nascimento")
@@ -100,69 +100,73 @@ def evaluate_rules(a: Dict[str, Any]):
         except Exception:
             pass
 
-    if g("idade") is not None and g("idade") < 18:
-        exclusion.append("Menor de 18 anos.")
-    if g("gravidez") == "sim":
-        exclusion.append("Gestação em curso.")
-    if g("amamentando") == "sim":
-        exclusion.append("Amamentação em curso.")
-    if g("tratamento_cancer") == "sim":
-        exclusion.append("Tratamento oncológico ativo.")
-    if g("pancreatite_previa") == "sim":
-        exclusion.append("História de pancreatite prévia.")
-    if g("historico_mtc_men2") == "sim":
-        exclusion.append("História pessoal/familiar de carcinoma medular de tireoide (MTC) ou MEN2.")
-    if g("alergia_glp1") == "sim":
-        exclusion.append("Hipersensibilidade conhecida a análogos de GLP-1.")
+    if g("idade") is not None and g("idade") < 18: exclusion.append("Menor de 18 anos.")
+    if g("gravidez") == "sim": exclusion.append("Gestação em curso.")
+    if g("amamentando") == "sim": exclusion.append("Amamentação em curso.")
+    if g("tratamento_cancer") == "sim": exclusion.append("Tratamento oncológico ativo.")
+    if g("pancreatite_previa") == "sim": exclusion.append("História de pancreatite prévia.")
+    if g("historico_mtc_men2") == "sim": exclusion.append("História pessoal/familiar de carcinoma medular de tireoide (MTC) ou MEN2.")
+    if g("alergia_glp1") == "sim": exclusion.append("Hipersensibilidade conhecida a análogos de GLP-1.")
     if g("alergias_componentes"):
-        exclusion.append("Alergia relatada a excipientes comuns de formulações injetáveis (ver detalhes).")
-    if g("gi_grave") == "sim":
-        exclusion.append("Doença gastrointestinal grave ativa.")
-    if g("gastroparesia") == "sim":
-        exclusion.append("Gastroparesia diagnosticada.")
-    if g("colecistite_12m") == "sim":
-        exclusion.append("Colecistite/colelitíase sintomática nos últimos 12 meses.")
-    if g("insuf_renal") in ["moderada", "grave"]:
-        exclusion.append("Insuficiência renal moderada/grave (necessita avaliação médica).")
-    if g("insuf_hepatica") in ["moderada", "grave"]:
-        exclusion.append("Insuficiência hepática moderada/grave (necessita avaliação médica).")
-    if g("transtorno_alimentar") == "sim":
-        exclusion.append("Transtorno alimentar ativo.")
-    if g("uso_corticoide") == "sim":
-        exclusion.append("Uso crônico de corticoide (requer avaliação).")
-    if g("antipsicoticos") == "sim":
-        exclusion.append("Uso de antipsicóticos (requer avaliação).")
+        if g("alergias_componentes") != ["Não tenho alergia a esses componentes"]:
+            exclusion.append("Alergia relatada a excipientes comuns de formulações injetáveis (ver detalhes).")
+    if g("gi_grave") == "sim": exclusion.append("Doença gastrointestinal grave ativa.")
+    if g("gastroparesia") == "sim": exclusion.append("Gastroparesia diagnosticada.")
+    if g("colecistite_12m") == "sim": exclusion.append("Colecistite/colelitíase sintomática nos últimos 12 meses.")
+    if g("insuf_renal") in ["moderada", "grave"]: exclusion.append("Insuficiência renal moderada/grave (necessita avaliação médica).")
+    if g("insuf_hepatica") in ["moderada", "grave"]: exclusion.append("Insuficiência hepática moderada/grave (necessita avaliação médica).")
+    if g("transtorno_alimentar") == "sim": exclusion.append("Transtorno alimentar ativo.")
+    if g("uso_corticoide") == "sim": exclusion.append("Uso crônico de corticoide (requer avaliação).")
+    if g("antipsicoticos") == "sim": exclusion.append("Uso de antipsicóticos (requer avaliação).")
 
-    imc = None
-    peso = g("peso")
-    altura = g("altura")
-    if peso and altura:
-        try:
-            imc = float(peso) / (float(altura) ** 2)
-            st.session_state.answers["imc"] = round(imc, 1)
-        except Exception:
-            pass
-    if imc is not None:
-        if imc < 27 and g("tem_comorbidades") == "nao":
-            exclusion.append("IMC < 27 sem comorbidades relevantes.")
+    # IMC interno
+    peso, altura = g("peso"), g("altura")
+    try:
+        imc = float(peso) / (float(altura) ** 2) if peso and altura else None
+    except Exception:
+        imc = None
+    if imc is not None and imc < 27 and g("tem_comorbidades") == "nao":
+        exclusion.append("IMC < 27 sem comorbidades relevantes.")
 
-    status = "excluido" if exclusion else "potencialmente_elegivel"
-    return status, exclusion
+    return ("excluido" if exclusion else "potencialmente_elegivel"), exclusion
 
-# UI
+# ---------------- Helpers UI ----------------
+STEP_NAMES = ["Sobre você", "Sua saúde", "Condições importantes", "Medicações & alergias", "Histórico & objetivo", "Revisar & confirmar"]
+def crumbs():
+    st.markdown("<div class='crumbs'>" + "".join(
+        [f"<span class='crumb {'active' if i==st.session_state.step else ''}'>{i+1}. {n}</span>" for i, n in enumerate(STEP_NAMES)]
+    ) + "</div>", unsafe_allow_html=True)
+
+def norm_orgao(v: str) -> str:
+    mapa = {"Está normal":"normal","normal":"normal","leve":"leve","moderada":"moderada","grave":"grave","Não sei informar":"desconhecido","não sei informar":"desconhecido"}
+    return mapa.get(v, "desconhecido")
+
+# ---------------- App ----------------
 init_state()
 st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
-st.caption("Uma triagem rápida e acolhedora para entender se o tratamento farmacológico pode ser para você.")
 
-with st.expander("Como funciona (rapidinho)", expanded=False):
-    st.write("- Em 5 min você responde perguntas simples.\n- Cada pessoa tem uma história única, queremos conhecer a sua.\n- Depois das respostas nosso time **médico** vai conferir tudo.\n- Por último, se tudo certo, enviaremos sua prescrição.")
+# (4) Seção "Como funciona" fixa (sempre visível, sem expander)
+st.markdown(
+    """
+<div class="card">
+  <b>Como funciona</b>
+  <ul style="margin: .5rem 0 0 .9rem;">
+    <li>Em poucos minutos você responde perguntas simples.</li>
+    <li>Cada pessoa tem uma história única — queremos conhecer a sua.</li>
+    <li>Depois das respostas, nosso <b>time médico</b> confere tudo com cuidado.</li>
+    <li>Se estiver tudo adequado, seguimos com a orientação terapêutica e prescrição.</li>
+  </ul>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
-total_steps = 6
-st.progress((st.session_state.step + 1) / total_steps)
+crumbs()
+st.progress((st.session_state.step + 1) / 6)
 
-# -------- Step 0 — Identificação (Dia/Mês/Ano sem calendário) --------
+# -------- Etapa 0 — Identificação (Data de nascimento explícita) --------
 if st.session_state.step == 0:
-    st.subheader("1) Vamos começar ? 🙂")
+    st.subheader("1) Vamos começar?")
     with st.form("step0"):
         col1, col2 = st.columns(2)
         with col1:
@@ -171,7 +175,7 @@ if st.session_state.step == 0:
         with col2:
             hoje = date.today()
             default_iso = st.session_state.answers.get("data_nascimento")
-            if isinstance(default_iso, str):
+            if isinstance(default_iso, str) and default_iso:
                 try:
                     d = date.fromisoformat(default_iso)
                     dia_default, mes_default, ano_default = d.day, d.month, d.year
@@ -180,20 +184,20 @@ if st.session_state.step == 0:
             else:
                 dia_default, mes_default, ano_default = 1, 1, 1990
 
+            st.markdown("<div class='muted'>Preencha sua <b>data de nascimento</b> nos campos abaixo (Dia / Mês / Ano).</div>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1,1,2])
-            dia = c1.selectbox("Dia", list(range(1,32)), index=dia_default-1)
-            mes = c2.selectbox("Mês", list(range(1,13)), index=mes_default-1)
-            anos = list(range(1940, hoje.year+1))
+            dia = c1.selectbox("Dia (nascimento)", list(range(1,32)), index=dia_default-1, placeholder="Selecione o dia")
+            mes = c2.selectbox("Mês (nascimento)", list(range(1,13)), index=mes_default-1, placeholder="Selecione o mês")
+            anos = list(range(1900, hoje.year+1))
             try:
                 idx = anos.index(ano_default)
             except ValueError:
                 idx = len(anos)//2
-            ano = c3.selectbox("Ano", anos, index=idx)
+            ano = c3.selectbox("Ano (nascimento)", anos, index=idx, placeholder="Selecione o ano")
 
-            sexo = st.selectbox("Sexo (opcional)", ["feminino", "masculino", "prefiro não informar"], index=["feminino", "masculino", "prefiro não informar"].index(st.session_state.answers.get("sexo", "feminino")) if st.session_state.answers.get("sexo") else 0)
+            identidade = st.selectbox("Como você se identifica? (opcional)", ["Feminino","Masculino","Prefiro não informar"], index=(["Feminino","Masculino","Prefiro não informar"].index(st.session_state.answers.get("identidade","Feminino")) if st.session_state.answers.get("identidade") else 0), placeholder="Selecione uma opção")
 
         erro = None
-        data_nascimento = None
         try:
             data_nascimento = date(ano, mes, dia)
             if data_nascimento > date.today():
@@ -201,113 +205,148 @@ if st.session_state.step == 0:
         except Exception:
             erro = "Data inválida. Verifique dia/mês/ano."
 
-        idade_calc = calc_idade(data_nascimento) if data_nascimento else None
-        st.session_state.answers.update({
-            "nome": nome, "email": email,
-            "data_nascimento": str(data_nascimento) if data_nascimento else "",
-            "idade": idade_calc, "idade_calculada": idade_calc, "sexo": sexo
-        })
+        st.session_state.answers.update({"nome": nome, "email": email, "identidade": identidade, "data_nascimento": (str(data_nascimento) if not erro else "")})
 
-        submitted = st.form_submit_button("Continuar ▶️", use_container_width=True)
-        if submitted:
-            if not nome.strip():
-                st.error("Por favor, preencha o nome completo.")
-            elif not email.strip():
-                st.error("Por favor, preencha o e-mail.")
-            elif erro:
-                st.error(erro)
-            else:
-                next_step()  # força rerun
+        # Botões (3) Voltar em todas as etapas | deixar 'Continuar' primeiro no código para o Enter
+        colA, colB = st.columns(2)
+        with colB:
+            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
+        with colA:
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
-# -------- Step 1 — Medidas --------
+        if b_back:
+            prev_step()
+        if b_cont:
+            if not nome.strip(): st.error("Por favor, preencha o nome completo.")
+            elif not email.strip(): st.error("Por favor, preencha o e-mail.")
+            elif erro: st.error(erro)
+            else: next_step()
+
+# -------- Etapa 1 — Medidas --------
 elif st.session_state.step == 1:
     st.subheader("2) Medidas e saúde atual 🩺")
     with st.form("step1"):
         col1, col2 = st.columns(2)
         with col1:
             peso = st.number_input("Peso (kg) *", min_value=30, max_value=400, step=1, value=int(st.session_state.answers.get("peso", 90)), format="%d")
-            tem_comorbidades = st.radio("Possui comorbidades relevantes? (Diabetes, pressão alta, apneia do sono, colesterol...)", options=["sim", "nao"], index=0 if st.session_state.answers.get("tem_comorbidades","sim")=="sim" else 1, horizontal=True)
+            tem_comorbidades = st.selectbox("Você tem alguma dessas condições de saúde? (ex.: diabetes tipo 2, pressão alta, apneia do sono, colesterol alto)", ["Sim","Não"], index=0 if st.session_state.answers.get("tem_comorbidades","sim")=="sim" else 1, placeholder="Selecione uma opção")
         with col2:
             altura = st.number_input("Altura (m) *", min_value=1.30, max_value=2.20, step=0.01, value=float(st.session_state.answers.get("altura", 1.70)), help="Ex.: 1.70")
-            comorbidades = st.text_area("Se sim, quais comorbidades?", value=st.session_state.answers.get("comorbidades", ""))
+            comorbidades = st.text_area("Se sim, quais comorbidades? (opcional)", value=st.session_state.answers.get("comorbidades", ""))
 
-        st.session_state.answers.update({"peso": peso, "altura": altura, "tem_comorbidades": tem_comorbidades, "comorbidades": comorbidades})
+        st.session_state.answers.update({"peso": peso, "altura": altura, "tem_comorbidades": ("sim" if tem_comorbidades=="Sim" else "nao"), "comorbidades": comorbidades})
 
-        submitted = st.form_submit_button("Continuar ▶️", use_container_width=True)
-        if submitted:
-            next_step()  # força rerun
+        colA, colB = st.columns(2)
+        with colB:
+            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
+        with colA:
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
-# -------- Step 2 — Condições --------
+        if b_back: prev_step()
+        if b_cont: next_step()
+
+# -------- Etapa 2 — Condições --------
 elif st.session_state.step == 2:
     st.subheader("3) Algumas perguntas importantes ⚠️")
     with st.form("step2"):
         col1, col2 = st.columns(2)
         with col1:
-            gravidez = st.radio("Está grávida?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gravidez","nao")=="nao" else 1)
-            amamentando = st.radio("Está amamentando?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("amamentando","nao")=="nao" else 1)
-            tratamento_cancer = st.radio("Em tratamento oncológico ativo?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("tratamento_cancer","nao")=="nao" else 1)
-            gi_grave = st.radio("Doença gastrointestinal grave ativa?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gi_grave","nao")=="nao" else 1)
-            gastroparesia = st.radio("Diagnóstico de gastroparesia (esvaziamento gástrico lento)?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("gastroparesia","nao")=="nao" else 1)
+            gravidez = st.selectbox("Está grávida?", ["Não","Sim"], index=0 if st.session_state.answers.get("gravidez","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            amamentando = st.selectbox("Está amamentando?", ["Não","Sim"], index=0 if st.session_state.answers.get("amamentando","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            tratamento_cancer = st.selectbox("Está em tratamento oncológico ativo?", ["Não","Sim"], index=0 if st.session_state.answers.get("tratamento_cancer","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            gi_grave = st.selectbox("Doença gastrointestinal grave ativa?", ["Não","Sim"], index=0 if st.session_state.answers.get("gi_grave","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            gastroparesia = st.selectbox("Diagnóstico de gastroparesia (esvaziamento gástrico lento)?", ["Não","Sim"], index=0 if st.session_state.answers.get("gastroparesia","nao")=="nao" else 1, placeholder="Selecione uma opção")
         with col2:
-            pancreatite_previa = st.radio("Já teve pancreatite?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("pancreatite_previa","nao")=="nao" else 1)
-            historico_mtc_men2 = st.radio("História pessoal/familiar de cancer na tireoide?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("historico_mtc_men2","nao")=="nao" else 1)
-            colecistite_12m = st.radio("Cólica de vesícula/colecistite nos últimos 12 meses?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("colecistite_12m","nao")=="nao" else 1)
-            outras_contra = st.text_area("Outras condições clínicas relevantes?")
+            pancreatite_previa = st.selectbox("Já teve pancreatite?", ["Não","Sim"], index=0 if st.session_state.answers.get("pancreatite_previa","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            historico_mtc_men2 = st.selectbox("História pessoal/familiar de carcinoma medular de tireoide (MTC) ou MEN2?", ["Não","Sim"], index=0 if st.session_state.answers.get("historico_mtc_men2","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            colecistite_12m = st.selectbox("Cólica de vesícula/colecistite nos últimos 12 meses?", ["Não","Sim"], index=0 if st.session_state.answers.get("colecistite_12m","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            outras_contra = st.text_area("Outras condições clínicas relevantes? (opcional)", value=st.session_state.answers.get("outras_contra",""))
 
+        # normaliza para sim/nao
         st.session_state.answers.update({
-            "gravidez": gravidez, "amamentando": amamentando, "tratamento_cancer": tratamento_cancer,
-            "gi_grave": gi_grave, "gastroparesia": gastroparesia, "pancreatite_previa": pancreatite_previa,
-            "historico_mtc_men2": historico_mtc_men2, "colecistite_12m": colecistite_12m, "outras_contra": outras_contra,
+            "gravidez": "sim" if gravidez=="Sim" else "nao",
+            "amamentando": "sim" if amamentando=="Sim" else "nao",
+            "tratamento_cancer": "sim" if tratamento_cancer=="Sim" else "nao",
+            "gi_grave": "sim" if gi_grave=="Sim" else "nao",
+            "gastroparesia": "sim" if gastroparesia=="Sim" else "nao",
+            "pancreatite_previa": "sim" if pancreatite_previa=="Sim" else "nao",
+            "historico_mtc_men2": "sim" if historico_mtc_men2=="Sim" else "nao",
+            "colecistite_12m": "sim" if colecistite_12m=="Sim" else "nao",
+            "outras_contra": outras_contra,
         })
 
-        submitted = st.form_submit_button("Continuar ▶️", use_container_width=True)
-        if submitted:
-            next_step()  # força rerun
+        colA, colB = st.columns(2)
+        with colB:
+            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
+        with colA:
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
-# -------- Step 3 — Medicações e alergias --------
+        if b_back: prev_step()
+        if b_cont: next_step()
+
+# -------- Etapa 3 — Medicações e alergias --------
 elif st.session_state.step == 3:
     st.subheader("4) Medicações e alergias 💉")
     with st.form("step3"):
         col1, col2 = st.columns(2)
         with col1:
-            insuf_renal = st.selectbox("Como estão seus rins? Algum problema?", ["Está normal", "leve", "moderada", "grave"], index=["Está normal","leve","moderada","grave"].index(st.session_state.answers.get("insuf_renal","Está normal")) if st.session_state.answers.get("insuf_renal") else 0)
-            insuf_hepatica = st.selectbox("E o fígado?", ["normal", "leve", "moderada", "grave"], index=["normal","leve","moderada","grave"].index(st.session_state.answers.get("insuf_hepatica","normal")) if st.session_state.answers.get("insuf_hepatica") else 0)
-            transtorno_alimentar = st.radio("Tem transtorno alimentar ativo (anorexia/bulimia/compulsão)?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("transtorno_alimentar","nao")=="nao" else 1)
-            uso_corticoide = st.radio("Usa corticoide todos os dias há mais de 3 meses?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("uso_corticoide","nao")=="nao" else 1)
-            antipsicoticos = st.radio("Usa antipsicóticos atualmente?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("antipsicoticos","nao")=="nao" else 1)
+            insuf_renal = st.selectbox("Como estão seus rins?", ["Normal","Leve","Moderada","Grave","Não sei informar"], index=(["Normal","Leve","Moderada","Grave","Não sei informar"].index(st.session_state.answers.get("insuf_renal","Normal").capitalize()) if st.session_state.answers.get("insuf_renal") else 0), placeholder="Selecione uma opção")
+            insuf_hepatica = st.selectbox("E o fígado?", ["Normal","Leve","Moderada","Grave","Não sei informar"], index=(["Normal","Leve","Moderada","Grave","Não sei informar"].index(st.session_state.answers.get("insuf_hepatica","Normal").capitalize()) if st.session_state.answers.get("insuf_hepatica") else 0), placeholder="Selecione uma opção")
+            transtorno_alimentar = st.selectbox("Tem transtorno alimentar ativo? (anorexia, bulimia, compulsão alimentar)", ["Não","Sim"], index=0 if st.session_state.answers.get("transtorno_alimentar","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            uso_corticoide = st.selectbox("Usa corticoide todos os dias há mais de 3 meses?", ["Não","Sim"], index=0 if st.session_state.answers.get("uso_corticoide","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            antipsicoticos = st.selectbox("Usa medicamentos antipsicóticos atualmente?", ["Não","Sim"], index=0 if st.session_state.answers.get("antipsicoticos","nao")=="nao" else 1, placeholder="Selecione uma opção")
         with col2:
-            alergia_glp1 = st.radio("Tem alergia conhecida a remédios do tipo GLP-1?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("alergia_glp1","nao")=="nao" else 1)
-            alergias_componentes = st.multiselect("É alérgico(a) a algum destes componentes comuns?", options=EXCIPIENTES_COMUNS, default=st.session_state.answers.get("alergias_componentes", []))
-            outros_componentes = st.text_input("Algum outro componente ao qual você é alérgico(a)?")
+            alergias_componentes = st.multiselect("É alérgico(a) a algum destes componentes comuns?", options=EXCIPIENTES_COMUNS, default=st.session_state.answers.get("alergias_componentes", []), placeholder="Selecione os componentes (pode marcar mais de um)")
+            # Exclusão mútua: se "Não tenho..." + outros → mantém só "Não tenho..."
+            if "Não tenho alergia a esses componentes" in alergias_componentes and len(alergias_componentes) > 1:
+                alergias_componentes = ["Não tenho alergia a esses componentes"]
+            outros_componentes = st.text_input("Alguma outra alergia importante? (opcional)", value=st.session_state.answers.get("outros_componentes",""))
+            alergia_glp1 = st.selectbox("Alergia conhecida a medicamentos do tipo GLP-1?", ["Não","Sim"], index=0 if st.session_state.answers.get("alergia_glp1","nao")=="nao" else 1, placeholder="Selecione uma opção")
 
         st.session_state.answers.update({
-            "insuf_renal": insuf_renal, "insuf_hepatica": insuf_hepatica, "transtorno_alimentar": transtorno_alimentar,
-            "uso_corticoide": uso_corticoide, "antipsicóticos": antipsicoticos if isinstance(antipsicóticos := st.session_state.answers.get("antipsicoticos","nao"), str) else "nao",
-            "antipsicoticos": antipsicoticos,
-            "alergia_glp1": alergia_glp1, "alergias_componentes": alergias_componentes, "outros_componentes": outros_componentes,
+            "insuf_renal": norm_orgao(insuf_renal),
+            "insuf_hepatica": norm_orgao(insuf_hepatica),
+            "transtorno_alimentar": "sim" if transtorno_alimentar=="Sim" else "nao",
+            "uso_corticoide": "sim" if uso_corticoide=="Sim" else "nao",
+            "antipsicoticos": "sim" if antipsicoticos=="Sim" else "nao",
+            "alergias_componentes": alergias_componentes,
+            "outros_componentes": outros_componentes,
+            "alergia_glp1": "sim" if alergia_glp1=="Sim" else "nao",
         })
 
-        submitted = st.form_submit_button("Continuar ▶️", use_container_width=True)
-        if submitted:
-            next_step()  # força rerun
+        colA, colB = st.columns(2)
+        with colB:
+            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
+        with colA:
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
-# -------- Step 4 — Histórico e objetivo --------
+        if b_back: prev_step()
+        if b_cont: next_step()
+
+# -------- Etapa 4 — Histórico e objetivo --------
 elif st.session_state.step == 4:
     st.subheader("5) Histórico e objetivo 🎯")
     with st.form("step4"):
         col1, col2 = st.columns(2)
         with col1:
-            usou_antes = st.radio("Já usou medicação para emagrecer?", options=["nao", "sim"], horizontal=True, index=0 if st.session_state.answers.get("usou_antes","nao")=="nao" else 1)
-            quais = st.multiselect("Quais?", options=["Semaglutida","Tirzepatida","Liraglutida","Orlistate","Bupropiona/Naltrexona","Outros"], default=st.session_state.answers.get("quais", []))
-            efeitos = st.text_area("Teve algum efeito colateral? Conte pra gente.")
+            usou_antes = st.selectbox("Já usou medicação para emagrecer?", ["Não","Sim"], index=0 if st.session_state.answers.get("usou_antes","nao")=="nao" else 1, placeholder="Selecione uma opção")
+            quais = st.multiselect("Quais? (opcional)", options=["Semaglutida","Tirzepatida","Liraglutida","Orlistate","Bupropiona/Naltrexona","Outros"], default=st.session_state.answers.get("quais", []), placeholder="Selecione as medicações")
+            efeitos = st.text_area("Teve algum efeito colateral? (opcional)", value=st.session_state.answers.get("efeitos",""))
         with col2:
-            objetivo = st.selectbox("Qual seu objetivo principal?", options=["Perda de peso","Controle de comorbidades","Manutenção"], index=["Perda de peso","Controle de comorbidades","Manutenção"].index(st.session_state.answers.get("objetivo","Perda de peso")) if st.session_state.answers.get("objetivo") else 0)
-            gestao_expectativas = st.slider("Quão pronto(a) está para mudanças no dia a dia (0-10)?", 0, 10, value=st.session_state.answers.get("pronto_mudar", 6))
+            objetivo = st.selectbox("Qual seu objetivo principal?", ["Perda de peso","Controle de comorbidades","Manutenção do peso"], index=(["Perda de peso","Controle de comorbidades","Manutenção do peso"].index(st.session_state.answers.get("objetivo","Perda de peso")) if st.session_state.answers.get("objetivo") else 0), placeholder="Selecione uma opção")
+            gestao_expectativas = st.slider("Quão pronto(a) está para mudanças no dia a dia (0–10)?", 0, 10, value=st.session_state.answers.get("pronto_mudar", 6))
 
-        st.session_state.answers.update({"usou_antes": usou_antes, "quais": quais, "efeitos": efeitos, "objetivo": objetivo, "pronto_mudar": gestao_expectativas})
+        st.session_state.answers.update({"usou_antes": ("sim" if usou_antes=="Sim" else "nao"), "quais": quais, "efeitos": efeitos, "objetivo": objetivo, "pronto_mudar": gestao_expectativas})
 
-        submitted = st.form_submit_button("Ver meu resultado ✅", use_container_width=True)
-        if submitted:
+        colA, colB = st.columns(2)
+        with colB:
+            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
+        with colA:
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
+
+        if b_back: prev_step()
+        if b_cont:
+            # calcula idade internamente
             try:
                 dob = date.fromisoformat(st.session_state.answers.get("data_nascimento"))
                 st.session_state.answers["idade"] = calc_idade(dob)
@@ -317,9 +356,9 @@ elif st.session_state.step == 4:
             status, reasons = evaluate_rules(st.session_state.answers)
             st.session_state.eligibility = status
             st.session_state.exclusion_reasons = reasons
-            next_step()  # força rerun
+            next_step()
 
-# -------- Step 5 — Resultado + Consentimentos --------
+# -------- Etapa 5 — Resultado + Consentimentos --------
 elif st.session_state.step == 5:
     st.subheader("6) Seu resultado ✅")
     status = st.session_state.eligibility
@@ -352,7 +391,7 @@ elif st.session_state.step == 5:
 3. **Alternativas:** mudanças de estilo de vida, plano nutricional, atividade física e, quando indicado, procedimentos cirúrgicos.
 4. **Privacidade (LGPD):** autorizo o uso dos meus dados **somente** para este serviço, com segurança e possibilidade de revogar o consentimento.
 5. **Teleconsulta:** autorizo a **consulta on-line** (telemedicina) e sei que, se necessário, ela pode virar consulta presencial.
-6. **Veracidade:** declaro que as informações são verdadeiras.
+6. **Veracidade:** declaro que as informações aqui são verdadeiras.
 7. **Assinatura eletrônica:** meu aceite eletrônico tem validade jurídica.
         """)
 
@@ -365,23 +404,18 @@ elif st.session_state.step == 5:
             lgpd = st.checkbox("Autorizo o uso dos meus dados (LGPD).", value=st.session_state.answers.get("lgpd", False))
             veracidade = st.checkbox("Confirmo que as informações são verdadeiras.", value=st.session_state.answers.get("veracidade", False))
 
-        st.session_state.answers.update({
-            "aceite_termo": aceite_termo, "autoriza_teleconsulta": autoriza_teleconsulta, "lgpd": lgpd, "veracidade": veracidade,
-        })
+        st.session_state.answers.update({"aceite_termo": aceite_termo, "autoriza_teleconsulta": autoriza_teleconsulta, "lgpd": lgpd, "veracidade": veracidade})
         st.session_state.consent_ok = all([aceite_termo, autoriza_teleconsulta, lgpd, veracidade])
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            b_voltar = st.form_submit_button("⬅️ Voltar", use_container_width=True)
-        with col2:
-            b_reset = st.form_submit_button("Reiniciar fluxo 🔄", use_container_width=True)
-        with col3:
-            st.download_button("Baixar minhas respostas ", data=str(st.session_state.answers), file_name="vialeve_respostas.json", mime="application/json", disabled=not st.session_state.consent_ok)
+        colA, colB = st.columns(2)
+        with colB:
+            st.download_button("Baixar minhas respostas (JSON)", data=str(st.session_state.answers), file_name="vialeve_respostas.json", mime="application/json", disabled=not st.session_state.consent_ok, use_container_width=True)
+        with colA:
+            # também tem voltar aqui
+            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
 
-        if b_voltar:
-            prev_step()  # força rerun
-        if b_reset:
-            reset_flow()  # força rerun
+        if b_back:
+            prev_step()
 
 st.markdown("---")
-st.caption("ViaLeve • Protótipo v0.8 — PT-BR • Streamlit (Python)*Desenvolvedor Gil Abdallah Tosta ")
+st.caption("ViaLeve • Protótipo v0.10 — PT-BR • Streamlit (Python)")
