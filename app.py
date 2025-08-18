@@ -32,24 +32,31 @@ st.markdown(
       :root { --brand: #0EA5A4; --brandSoft: #94E7E3; --ink: #0F172A; }
       .logo-wrap { display:flex; align-items:center; gap:14px; margin: 0 0 12px 0; }
       .logo-wrap svg { max-width: 100%; height: auto; }
+
+      /* Card degradê; mover a primeira linha ("Como funciona") 0,5cm para a direita */
       .card {
         background: linear-gradient(135deg, #0EA5A4 0%, #26C0BE 60%, #94E7E3 100%);
         border: 0;
         border-radius: 1rem;
         box-shadow: 0 8px 24px rgba(0,0,0,.12);
         color: #ffffff !important;
+        padding: 1rem;
       }
       .card * { color: #ffffff !important; }
+      #como-funciona > b { display:block; margin-left: 0.5cm; } /* indent pedido */
+
       .crumbs { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0 16px 0;}
       .crumb { padding:6px 10px; border-radius:999px; border:1px solid #e2e8f0; background:#fff; color:#0f172a; font-size:0.85rem;}
       .crumb.active { background: var(--brandSoft); border-color: #c7f3ef; }
-      .muted { color:#0F172A; font-size:0.9rem; }
-      .actions { margin-top: .5rem; }
+
+      /* Textos auxiliares com cor padrão (não cinza claro) */
+      .muted { color: var(--ink); font-size:0.9rem; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# -------- Estado / navegação --------
 def init_state():
     defaults = {"step": 0, "answers": {}, "eligibility": None, "exclusion_reasons": [], "consent_ok": False}
     for k, v in defaults.items():
@@ -64,8 +71,7 @@ def next_step(): go_to(st.session_state.step + 1)
 def prev_step(): go_to(st.session_state.step - 1)
 
 def reset_flow():
-    for k in list(st.session_state.keys()):
-        del st.session_state[k]
+    for k in list(st.session_state.keys()): del st.session_state[k]
     init_state(); st.experimental_rerun()
 
 def calc_idade(d: date | None) -> int | None:
@@ -73,6 +79,7 @@ def calc_idade(d: date | None) -> int | None:
     today = date.today()
     return today.year - d.year - ((today.month, today.day) < (d.month, d.day))
 
+# -------- Regras clínicas --------
 EXCIPIENTES_COMUNS = [
     "Polietilenoglicol (PEG)",
     "Metacresol / Fenol",
@@ -90,14 +97,10 @@ def evaluate_rules(a: Dict[str, Any]):
     if g("data_nascimento"):
         try:
             dob = g("data_nascimento")
-            if isinstance(dob, str):
-                dob = date.fromisoformat(dob)
+            if isinstance(dob, str): dob = date.fromisoformat(dob)
             idade = calc_idade(dob)
-            if idade is not None:
-                a["idade"] = idade
-                a["idade_calculada"] = idade
-        except Exception:
-            pass
+            if idade is not None: a["idade"] = idade; a["idade_calculada"] = idade
+        except Exception: pass
 
     if g("idade") is not None and g("idade") < 18: exclusion.append("Menor de 18 anos.")
     if g("gravidez") == "sim": exclusion.append("Gestação em curso.")
@@ -118,9 +121,8 @@ def evaluate_rules(a: Dict[str, Any]):
     if g("uso_corticoide") == "sim": exclusion.append("Uso crônico de corticoide (requer avaliação).")
     if g("antipsicoticos") == "sim": exclusion.append("Uso de antipsicóticos (requer avaliação).")
 
-    peso, altura = g("peso"), g("altura")
     try:
-        imc = float(peso) / (float(altura) ** 2) if peso and altura else None
+        imc = float(g("peso")) / (float(g("altura")) ** 2) if g("peso") and g("altura") else None
     except Exception:
         imc = None
     if imc is not None and imc < 27 and g("tem_comorbidades") == "nao":
@@ -128,21 +130,25 @@ def evaluate_rules(a: Dict[str, Any]):
 
     return ("excluido" if exclusion else "potencialmente_elegivel"), exclusion
 
-STEP_NAMES=["Sobre você","Sua saúde","Condições importantes","Medicações & alergias","Histórico & objetivo","Revisar & confirmar"]
+# -------- Helpers UI --------
+STEP_NAMES = ["Sobre você", "Sua saúde", "Condições importantes", "Medicações & alergias", "Histórico & objetivo", "Revisar & confirmar"]
 def crumbs():
-    st.markdown("<div class='crumbs'>" + "".join([f"<span class='crumb {'active' if i==st.session_state.step else ''}'>{i+1}. {n}</span>" for i,n in enumerate(STEP_NAMES)]) + "</div>", unsafe_allow_html=True)
+    st.markdown("<div class='crumbs'>" + "".join(
+        [f"<span class='crumb {'active' if i==st.session_state.step else ''}'>{i+1}. {n}</span>" for i, n in enumerate(STEP_NAMES)]
+    ) + "</div>", unsafe_allow_html=True)
 
 def norm_orgao(v: str) -> str:
     mapa = {"Está normal":"normal","Normal":"normal","normal":"normal","Leve":"leve","leve":"leve","Moderada":"moderada","moderada":"moderada","Grave":"grave","grave":"grave","Não sei informar":"desconhecido","não sei informar":"desconhecido"}
     return mapa.get(v, "desconhecido")
 
-# App
+# -------- App --------
 init_state()
 st.markdown(f"<div class='logo-wrap'>{LOGO_SVG}</div>", unsafe_allow_html=True)
 
+# Card "Como funciona" (indent 0,5 cm na primeira linha)
 st.markdown(
     """
-<div class="card">
+<div id="como-funciona" class="card">
   <b>Como funciona</b>
   <ul style="margin: .5rem 0 0 .9rem;">
     <li>Em poucos minutos você responde perguntas simples.</li>
@@ -158,6 +164,7 @@ st.markdown(
 crumbs()
 st.progress((st.session_state.step + 1) / 6)
 
+# -------- Etapa 0 --------
 if st.session_state.step == 0:
     st.subheader("1) Vamos começar?")
     with st.form("step0"):
@@ -177,11 +184,12 @@ if st.session_state.step == 0:
             else:
                 dia_default, mes_default, ano_default = 1, 1, 1990
 
-            st.markdown("<div class='muted'>Preencha sua <b>data de nascimento</b> nos campos abaixo (Dia / Mês / Ano).</div>", unsafe_allow_html=True)
+            # Texto de instrução com cor padrão (sem classe .muted)
+            st.markdown("**Preencha sua data de nascimento** nos campos abaixo (Dia / Mês / Ano).")
             c1, c2, c3 = st.columns([1,1,2])
             dia = c1.selectbox("Dia (nascimento)", list(range(1,32)), index=dia_default-1, placeholder="Selecione o dia")
             mes = c2.selectbox("Mês (nascimento)", list(range(1,13)), index=mes_default-1, placeholder="Selecione o mês")
-            anos = list(range(1900, hoje.year+1))
+            anos = list(range(1950, hoje.year+1))  # inicia em 1950
             try:
                 idx = anos.index(ano_default)
             except ValueError:
@@ -200,20 +208,15 @@ if st.session_state.step == 0:
 
         st.session_state.answers.update({"nome": nome, "email": email, "identidade": identidade, "data_nascimento": (str(data_nascimento) if not erro else "")})
 
-        colA, colB = st.columns(2)
-        with colB:
-            b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
-        with colA:
-            b_back = st.form_submit_button("⬅️ Voltar", use_container_width=True)
-
-        if b_back:
-            prev_step()
+        # Somente Continuar (sem botão Voltar na 1ª etapa)
+        b_cont = st.form_submit_button("Continuar ▶️", use_container_width=True)
         if b_cont:
             if not nome.strip(): st.error("Por favor, preencha o nome completo.")
             elif not email.strip(): st.error("Por favor, preencha o e-mail.")
             elif erro: st.error(erro)
             else: next_step()
 
+# -------- Etapa 1 --------
 elif st.session_state.step == 1:
     st.subheader("2) Medidas e saúde atual 🩺")
     with st.form("step1"):
@@ -236,6 +239,7 @@ elif st.session_state.step == 1:
         if b_back: prev_step()
         if b_cont: next_step()
 
+# -------- Etapa 2 --------
 elif st.session_state.step == 2:
     st.subheader("3) Algumas perguntas importantes ⚠️")
     with st.form("step2"):
@@ -273,6 +277,7 @@ elif st.session_state.step == 2:
         if b_back: prev_step()
         if b_cont: next_step()
 
+# -------- Etapa 3 --------
 elif st.session_state.step == 3:
     st.subheader("4) Medicações e alergias 💉")
     with st.form("step3"):
@@ -310,6 +315,7 @@ elif st.session_state.step == 3:
         if b_back: prev_step()
         if b_cont: next_step()
 
+# -------- Etapa 4 --------
 elif st.session_state.step == 4:
     st.subheader("5) Histórico e objetivo 🎯")
     with st.form("step4"):
@@ -343,6 +349,7 @@ elif st.session_state.step == 4:
             st.session_state.exclusion_reasons = reasons
             next_step()
 
+# -------- Etapa 5 --------
 elif st.session_state.step == 5:
     st.subheader("6) Seu resultado ✅")
     status = st.session_state.eligibility
@@ -401,4 +408,4 @@ elif st.session_state.step == 5:
             prev_step()
 
 st.markdown("---")
-st.caption("ViaLeve • Protótipo v0.10.1 — PT-BR • Streamlit (Python)")
+st.caption("ViaLeve • Protótipo v0.10.2 — PT-BR • Streamlit (Python)")
